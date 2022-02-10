@@ -23,52 +23,52 @@ def get_runtime(filename):
     """
 
     raw_info = mutagen.File(filename).info.pprint()
-	runtime = float(raw_info.rsplit(', ', 1)[1].split(' ')[0])
-	return runtime
+    runtime = float(raw_info.rsplit(', ', 1)[1].split(' ')[0])
+    return runtime
 
 
 def get_shortname(filename):
-	"""Returns just the file's name
+    """Returns just the file's name
     
     ;param filename: the file's full path
     ;return: the file's name
     """
-	return filename.split('/')[-1].split('\\')[-1].rsplit('.', 1)[0]
+    return filename.split('/')[-1].split('\\')[-1].rsplit('.', 1)[0]
 
 
 def get_timestamp(seconds):
-	"""Returns the formatted timestamp
+    """Returns the formatted timestamp
     
     ;param seconds: the length of time in seconds
     ;return: the formatted timestamp
     """
-	return time.strftime("%H:%M:%S", time.gmtime(seconds))
+    return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
 
 def throw_error(text):
-	print("ERROR: " + text)
-	exit()
+    print("ERROR: " + text)
+    exit()
 
 
 def cleanup():
-	"""
+    """
     Cleans up temporary files that may have been generated
     """
 
-	try:
-		# Remove unneeded files list file
-		os.remove(directory + "files.txt")
+    try:
+        # Remove unneeded files list file
+        os.remove(directory + "files.txt")
 
-		# Remove temp dir files
-		for temp_file in files:
-			os.remove(f"{temp_dir}/{get_shortname(temp_file)}.m4a")
-	except FileNotFoundError:
-		pass
-	try:
-		# Remove temp dir
-		os.rmdir(temp_dir)
-	except FileNotFoundError:
-		pass
+        # Remove temp dir files
+        for temp_file in files:
+            os.remove(f"{temp_dir}/{get_shortname(temp_file)}.m4a")
+    except FileNotFoundError:
+        pass
+    try:
+        # Remove temp dir
+        os.rmdir(temp_dir)
+    except FileNotFoundError:
+        pass
 
 
 # FFMPEG binary location
@@ -76,7 +76,7 @@ ffmpeg = "ffmpeg"
 
 # Fix command for linux systems
 if platform == "linux":
-	ffmpeg = "./" + ffmpeg
+    ffmpeg = "./" + ffmpeg
 
 print("Welcome to album2vid!")
 
@@ -89,34 +89,34 @@ temp_dir = directory + "/.temp"
 
 # Verify directory is valid
 if not (os.path.isdir(directory) or directory == ""):
-	throw_error("The directory could not be found")
+    throw_error("The directory could not be found")
 
 # print(f"Currently running in the directory: {os.getcwd()}")
 print()
 
 # Add trailing slash for expanding filenames
 try:
-	if directory[len(directory) - 1] != "/":
-		directory += "/"
+    if directory[len(directory) - 1] != "/":
+        directory += "/"
 except IndexError:
-	pass
+    pass
 
 # Find all audio files in the directory
 extensions = ('wav', 'mp3', 'm4a', 'ogg', 'flac')
 files = []
 for ext in extensions:
-	files.extend(glob(directory + "*." + ext))
+    files.extend(glob(directory + "*." + ext))
 if len(files) == 0:
-	throw_error("The audio files could not be found")
+    throw_error("The audio files could not be found")
 
 # Find cover art
 cover = []
 cover.extend(glob(directory + "cover.jpg"))
 cover.extend(glob(directory + "cover.png"))
 try:
-	cover = cover[0]
+    cover = cover[0]
 except IndexError:
-	throw_error("The cover photo could not be found")
+    throw_error("The cover photo could not be found")
 
 # Sort the list of files
 files.sort()
@@ -126,32 +126,32 @@ cleanup()
 
 # Calculate track-list with timestamps
 with open(directory + "tracklist.txt", "w") as f:
-	curr_time = 0.0
-	for file in files:
-		f.write(get_shortname(file) + " -- " + get_timestamp(curr_time) + "\n")
-		curr_time += get_runtime(file)
+    curr_time = 0.0
+    for file in files:
+        f.write(get_shortname(file) + " -- " + get_timestamp(curr_time) + "\n")
+        curr_time += get_runtime(file)
 
 # Write all audio files to a temporary text document for ffmpeg
 with open(directory + "files.txt", "w") as f:
-	for file in files:
-		if not args.fast:
-			file = f"{temp_dir}/{get_shortname(file)}.m4a"
-		# This part ensures that any apostrophes are escaped
-		file = file.split("'")
-		if len(file) > 1:
-			file = "'\\''".join(file)
-		else:
-			file = file[0]
+    for file in files:
+        if not args.fast:
+            file = f"{temp_dir}/{get_shortname(file)}.m4a"
+        # This part ensures that any apostrophes are escaped
+        file = file.split("'")
+        if len(file) > 1:
+            file = "'\\''".join(file)
+        else:
+            file = file[0]
 
-		# Write the file line
-		f.write("file '" + file + "'\n")
+        # Write the file line
+        f.write("file '" + file + "'\n")
 
 if not args.fast:
-	# First pass to encode audio (this avoids errors in the final render)
-	os.mkdir(temp_dir)
-	for file in files:
-		first_pass_cmd = f"""{ffmpeg} -i "{file}" -map 0 -map -v? -map V? -acodec aac -b:a 320k "{temp_dir}/{get_shortname(file)}.m4a" """
-		subprocess.call(first_pass_cmd, shell=True)
+    # First pass to encode audio (this avoids errors in the final render)
+    os.mkdir(temp_dir)
+    for file in files:
+        first_pass_cmd = f"""{ffmpeg} -i "{file}" -map 0 -map -v? -map V? -acodec aac -b:a 320k "{temp_dir}/{get_shortname(file)}.m4a" """
+        subprocess.call(first_pass_cmd, shell=True)
 
 # Construct FFMPEG command for final render
 render_cmd = f'{ffmpeg} -hwaccel auto -y -loop 1 -framerate 1 -i "{cover}" -f concat -safe 0 -i "{directory}files.txt" -tune stillimage -shortest -fflags +shortest -max_interleave_delta 100M -vf format=yuv420p -s 1080x1080 -b:a 320k "{directory}out.mp4"'
