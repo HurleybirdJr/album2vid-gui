@@ -1,9 +1,8 @@
 __pycache__/
 build/
 /venv/
-/.temp/
 /.idea
-/cover.png
+/.temp
 /HOME - Odyssey - 01 Intro.mp3
 /HOME - Odyssey - 02 Native.mp3
 /HOME - Odyssey - 03 Decay.mp3
@@ -16,7 +15,6 @@ build/
 /HOME - Odyssey - 10 Come Back Down.mp3
 /HOME - Odyssey - 11 Half Moon.mp3
 /HOME - Odyssey - 12 On The Way Out.mp3
-/out.mp4
-/tracklist.txt
-/npgy/
-/beta/
+cover.png
+out.mp4
+tracklist.txt
