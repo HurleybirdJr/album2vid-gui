@@ -8,7 +8,7 @@ import os
 import subprocess
 import mutagen
 import time
-from sys import exit, platform
+from sys import exit
 import shutil
 from tkinter import *
 from tkinter import filedialog
