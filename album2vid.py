@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # AUTHOR: Nicholas Preston (npgy)
 # CO-AUTHOR (GUI): Will Hurley (HurleybirdJr)
 
@@ -6,17 +8,15 @@ import os
 import subprocess
 import mutagen
 import time
-import argparse
 from sys import exit, platform
+import shutil
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 from PIL import Image, ImageTk
 
-parser = argparse.ArgumentParser(description="A command line tool for generating videos from albums/tracks")
-parser.add_argument('-f', '--fast', action='store_true', help="Enables fast mode, may cause rendering errors")
-parser.add_argument("path", nargs="?", default="", help="The full path to the album's folder")
-args = parser.parse_args()
+# TODO: Implement "fast_mode" as GUI option before folder import
+fast_mode = True
 
 
 def get_runtime(filename):
@@ -51,7 +51,7 @@ def get_timestamp(seconds):
 
 def throw_error(text):
     print("ERROR: " + text)
-    exit()
+    exit(1)
 
 
 def cleanup():
@@ -59,18 +59,15 @@ def cleanup():
     Cleans up temporary files that may have been generated
     """
 
+    # Try deleting temp directory
+    try:
+        shutil.rmtree(temp_dir, ignore_errors=True, onerror=None)
+    except FileNotFoundError:  # I'm unsure if this is the right exception to catch
+        throw_error("Error deleting the temp directory")
+
     try:
         # Remove unneeded files list file
         os.remove(directory + "files.txt")
-
-        # Remove temp dir files
-        for temp_file in files:
-            os.remove(f"{temp_dir}/{get_shortname(temp_file)}.m4a")
-    except FileNotFoundError:
-        pass
-    try:
-        # Remove temp dir
-        os.rmdir(temp_dir)
     except FileNotFoundError:
         pass
 
@@ -78,9 +75,10 @@ def cleanup():
 # FFMPEG binary location
 ffmpeg = "ffmpeg"
 
+# ## Commented assuming @npgy:main PullRequest#2 is valid ##
 # Fix command for linux systems
-if platform == "linux":
-    ffmpeg = "./" + ffmpeg
+# if platform == "linux":
+#     ffmpeg = "./" + ffmpeg
 
 print("Welcome to album2vid!")
 
@@ -167,7 +165,8 @@ def getFolder():
     # Write all audio files to a temporary text document for ffmpeg
     with open(directory + "files.txt", "w") as f:
         for file in files:
-            file = f"{temp_dir}/{get_shortname(file)}.m4a"
+            if not fast_mode:
+                file = f"{temp_dir}/{get_shortname(file)}.m4a"
             # This part ensures that any apostrophes are escaped
             file = file.split("'")
             if len(file) > 1:
@@ -187,18 +186,18 @@ def getFolder():
     album_track_list_preview = Listbox(root, listvariable=tracks, height=30, width=50)
     album_track_list_preview.place(x=0, y=300)
 
-    # First pass to encode audio (this avoids errors in the final render)
-    os.mkdir(temp_dir)
-    for file in files:
-        first_pass_cmd = f"""{ffmpeg} -i "{file}" -map 0 -map -v? -map V? -acodec aac -b:a 320k "{temp_dir}/
-        {get_shortname(file)}.m4a" """
-        subprocess.run(first_pass_cmd)
+    # TODO: Include proper fast toggle logic branch here
+    if not fast_mode:
+        # First pass to encode audio (this avoids errors in the final render)
+        os.mkdir(temp_dir)
+        for file in files:
+            first_pass_cmd = f"""{ffmpeg} -i "{file}" -map 0 -map -v? -map V? -acodec aac -b:a 320k "{temp_dir}/
+            {get_shortname(file)}.m4a" """
+            subprocess.run(first_pass_cmd)
 
     go_button.configure(bg="#a9ff4d")
 
-    cmd = f"{ffmpeg} -y -loop 1 -framerate 1 -i {cover} -f concat -safe 0 -i {directory}files.txt -tune stillimage " \
-          f"-shortest -fflags +shortest -max_interleave_delta 100M -vf format=yuv420p -s 1080x1080 -b:a" \
-          f" 320k {directory}out.mp4 "
+    cmd = f'{ffmpeg} -hwaccel auto -y -loop 1 -framerate 1 -i "{cover}" -f concat -safe 0 -i "{directory}files.txt" -tune stillimage -shortest -fflags +shortest -max_interleave_delta 100M -vf format=yuv420p -s 1080x1080 -b:a 320k "{directory}out.mp4"'
 
     return cmd
 
@@ -208,15 +207,7 @@ def startRender():
     subprocess.run(cmd)
 
     # Clean up temp files
-    os.remove(directory + "files.txt")
-
-    # Remove temp dir
-    for file in files:
-        try:
-            os.remove(f"{temp_dir}/{get_shortname(file)}.m4a")
-        except FileNotFoundError:
-            pass
-    os.rmdir(temp_dir)
+    cleanup()
 
     print("YAY")
 
