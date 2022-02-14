@@ -103,7 +103,7 @@ root.geometry(f'{gui_width}x{gui_height}+{center_x}+{center_y}')
 
 
 # # # GUI Functions
-def getFolder():
+def get_folder():
     global cmd
     global directory
     global files
@@ -125,12 +125,12 @@ def getFolder():
         pass
 
     # Find all audio files in the directory
-    extensions = ('wav', 'mp3', 'm4a', 'ogg', 'flac')
+    extensions = ('.wav', '.mp3', '.m4a', '.ogg', '.flac')
     files = []
     extract_tracks = []
     for ext in extensions:
-        extract_tracks.append(glob("*." + ext))
-        files.extend(glob(directory + "*." + ext))
+        extract_tracks.append(glob("*" + ext))
+        files.extend(glob(directory + "*" + ext))
     if len(files) == 0:
         throw_error("The audio files could not be found")
 
@@ -202,7 +202,7 @@ def getFolder():
     return cmd
 
 
-def startRender():
+def start_render():
     # Execute FFMPEG command and delete temporary file
     subprocess.run(cmd)
 
@@ -219,11 +219,11 @@ album_image = ImageTk.PhotoImage(album_image_file)
 album_image_label = ttk.Label(root, image=album_image, padding=0)
 album_image_label.place(x=0, y=0)
 
-go_button = Button(root, text="R E N D E R", command=startRender, bg="#ff4d4d", fg="#fff", width=12,
+go_button = Button(root, text="R E N D E R", command=start_render, bg="#ff4d4d", fg="#fff", width=12,
                    font=("Arial", "50"))
 go_button.place(x=400, y=500)
 
-folder_select_button = Button(root, text="CHOOSE FOLDER", command=getFolder, bg="#363636", fg="#fff",
+folder_select_button = Button(root, text="CHOOSE FOLDER", command=get_folder, bg="#363636", fg="#fff",
                               font=("Arial", "30"))
 folder_select_button.place(x=450, y=400)
 
