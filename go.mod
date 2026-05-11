@@ -1,4 +1,4 @@
-module github.com/npgy/album2vid
+module github.com/hurleybirdjr/album2vid-gui
 
 go 1.26.2
 

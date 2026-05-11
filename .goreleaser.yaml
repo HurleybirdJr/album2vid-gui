@@ -16,7 +16,7 @@ before:
     # - go generate ./...
 
 builds:
-  - main: ./cmd/album2vid
+  - main: ./cmd/album2vid-gui
     env:
       - CGO_ENABLED=0
     goos:

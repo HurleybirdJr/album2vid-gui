@@ -1,5 +1,5 @@
-BINARY := album2vid
-CMD := ./cmd/album2vid
+BINARY := album2vid-gui
+CMD := ./cmd/album2vid-gui
 
 .PHONY: build run
 
