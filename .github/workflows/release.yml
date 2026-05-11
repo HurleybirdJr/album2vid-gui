@@ -1,5 +1,4 @@
 name: Release album2vid
-
 on:
   workflow_dispatch:
   push:
@@ -7,24 +6,25 @@ on:
 
 permissions:
   contents: write
-  # packages: write
-  # issues: write
-  # id-token: write
 
 jobs:
-  goreleaser:
+  tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.gen-tag.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+
       - name: Get tag
         id: gen-tag
         run: |
           version=$(cat version.json | jq -r .version)
           echo tag="v$version" >> $GITHUB_OUTPUT
+
       - name: Push tag to repo
         uses: actions/github-script@v9
         with:
@@ -33,29 +33,102 @@ jobs:
               github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: 'refs/tags/${{steps.gen-tag.outputs.tag}}',
+                ref: 'refs/tags/${{ steps.gen-tag.outputs.tag }}',
                 sha: context.sha
               })
             } catch (error) {
               console.log('Tag already exists, skipping tag creation.')
             }
+
+      - name: Fetch new tag
+        run: git fetch --tags
+
+  build:
+    needs: tag
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            goarch: amd64
+          - runner: ubuntu-24.04-arm
+            goarch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Install OpenGL & X11 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-dev \
+            libgles2-mesa-dev \
+            libglfw3-dev \
+            xorg-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxi-dev
+
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version: "1.26.2"
-      - name: Fetch new tag
-        run: git fetch --tags
-      # More assembly might be required: Docker logins, GPG, etc.
-      # It all depends on your needs.
-      - name: Run GoReleaser
+
+      - name: Run GoReleaser (split)
         uses: goreleaser/goreleaser-action@v7
         with:
-          # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
-          # 'latest', 'nightly', or a semver
           version: "~> v2"
-          args: release --clean
+          args: release --clean --split
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
-          # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "1"
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.goarch }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Download amd64 dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-amd64
+          path: dist/
+
+      - name: Download arm64 dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-arm64
+          path: dist/
+
+      - name: Merge and publish release
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: continue --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
