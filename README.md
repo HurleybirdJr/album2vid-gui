@@ -1,54 +1,65 @@
-# album2vid-gui
+# album2vid
 
-### A GUI-based tool for npgy/album2vid, made in Python.
+If you run a YouTube channel for music like I do, you will find this useful.
+It lets you generate an output video from audio files and their respective cover art reasonably fast.
 
-This fork provides an alternative GUI-based tool for album2vid.
+ffmpeg binary sources:
 
-It lets you generate a video output, from the audio files and cover art, of an album reasonably fast.
+- mac and linux from https://ffmpeg.martin-riedl.de/
+- win amd64 from https://www.gyan.dev/ffmpeg/builds/#release-builds
 
 ## Installation
-~~The simplest way to install this tool is to download the binary for your OS on the [releases](https://github.com/npgy/album2vid/releases) page.~~
 
-~~You can also choose to just clone the python script and run it manually with your own binary of Ffmpeg.~~
-
-~~This should work on any OS.~~
-
-#### Coming Soon
-##### (*There are currently no pre-built binaries yet*)
+The simplest way to install this tool is to download the binary for your OS on the [releases](https://github.com/npgy/album2vid/releases) page.
 
 ## Usage
-First, make sure you have prepared your album's files correctly. 
-They need to be ordered numerically with the cover art named appropriately.
 
-### Audio file compatability:
-```.wav```
-```.mp3```
-```.m4a```
-```.ogg```
-```.flac```
+`album2vid [-h] [-f] [path]`
 
-#### Here's an example folder:  
+Flags:  
+`-f` or `--fast`: Enables fast mode, may cause rendering errors.  
+Essentially, without this flag, the program converts your input files to AAC first, and then stitches those into the output video.
+
+Args:  
+`path`: The full path to the album's folder  
+Make sure to enclose this in quotes
+
+First make sure you have prepared your album's files correctly. They need to be ordered numerically and the cover art needs to have a particular name.
+
+### Audio file compatibility:
+
+`.wav`
+`.mp3`
+`.m4a`
+`.ogg`
+`.flac`
+
+#### Here's an example folder:
 
 ![Album file example](https://i.imgur.com/yqjylZX.png)
 
-Tracks should have their numbers in front of them, and the cover art is named "cover.jpg".  
-**Note:** This program also accepts "cover.png".
+As you can see, the tracks have their numbers in front of them, and the cover art is named "cover.jpg".  
+This program also accepts "cover.png".
 
-Once you open the program, it will ask for the directory of your album's files. You can paste in the path url or just run the program inside that folder and hit enter.  
-After it converts your audio files and cover art to a video, a file named "out.mp4" will appear. This is your final video, you are ready to upload!  
-In addition, this program also generates a tracklist with timestamps for you! It will output to the file "tracklist.txt"
-
+After it converts your audio files and cover art to a video, a file named "out.mp4" will appear in the same directory you ran the command on. This is your final video, you are ready to upload!  
+In addition, this program also generates a tracklist with timestamps for you! It will output to the file "tracklist.txt" in that same directory.
 
 ## Notes
 
-Some things to note are that this renders in x264 and 1080x1080. 
+- The output is rendered in x264 at 1080x1080.
+- Your cover art must be 1:1 aspect ratio; most are.
+- I'm not supporting macOS Intel anymore
+- I am not supporting win arm64 yet
 
-Your cover art must also be 1:1 aspect ratio; most are.  
+## Known Issues
 
-## TO-DO List
+- Certain image files cause the GPU acceleration to fail and thus the whole command, I haven't looked too far into this
 
+### Big thanks to:
 
-	<img src="https://img.shields.io/badge/STATUS-ready-success?style=flat-square">
+Z from Nightride FM for help with FFMPEG  
+[Alexis Masson](https://github.com/Aveheuzed) for helping refactor, organize, and simplify the codebase
 
-## Credit
-### [album2vid](https://github.com/npgy/album2vid) by [@npgy](https://github.com/npgy)
+### Projects that use this:
+
+[album2vid-gui](https://github.com/HurleybirdJr/album2vid-gui) by HurleyBirdJr
