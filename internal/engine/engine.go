@@ -96,11 +96,19 @@ func GenFilelist(infiles []string, tmpd string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+
+		}
+	}(f)
 
 	for _, file := range infiles {
 		escaped := strings.ReplaceAll(file, "'", "'\\''")
-		fmt.Fprintf(f, "file '%s'\n", escaped)
+		_, err := fmt.Fprintf(f, "file '%s'\n", escaped)
+		if err != nil {
+			return "", err
+		}
 	}
 	return filename, nil
 }
@@ -110,12 +118,20 @@ func (e *Engine) GenTracklist(ctx context.Context, infiles []string, outfile str
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+
+		}
+	}(f)
 
 	currTime := 0.0
 	for _, file := range infiles {
 		stem := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
-		fmt.Fprintf(f, "%s -- %s\n", stem, GetTimestamp(currTime))
+		_, err := fmt.Fprintf(f, "%s -- %s\n", stem, GetTimestamp(currTime))
+		if err != nil {
+			return err
+		}
 		if runtime, err := e.GetRuntime(ctx, file); err == nil {
 			currTime += runtime
 		}
